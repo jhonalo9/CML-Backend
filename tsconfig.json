@@ -8,8 +8,8 @@
     "skipLibCheck": true,
     "ignoreDeprecations": "6.0",
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./"
   },
-  "include": ["src/**/*"],
+  "include": ["./**/*.ts"],
   "exclude": ["node_modules", "tests", "dist"]
 }
