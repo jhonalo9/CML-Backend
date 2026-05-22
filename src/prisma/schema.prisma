@@ -1,0 +1,507 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum TipoUsuario {
+  estudiante
+  profesor
+  administrador
+}
+
+enum EstadoUsuario {
+  activo
+  inactivo
+  suspendido
+}
+
+enum Sexo {
+  Masculino
+  Femenino
+}
+
+enum NivelEstudios {
+  Primaria
+  Secundaria
+  Superior
+}
+
+model Usuario {
+  id                     Int           @id @default(autoincrement())
+  nombres                String
+  apellidos              String
+  email                  String        @unique
+  password               String
+  sexo                   Sexo
+  dni                    String        @unique
+  edad                   Int
+  fechaNacimiento        DateTime
+  direccion              String
+  ciudad                 String
+  pais                   String
+  distritoPertenece      String
+  ocupacion              String?
+  profesion              String?
+  nivelEstudios          NivelEstudios
+  esMiembroPlenaComunion Boolean
+  nombreIglesia          String
+  nombrePastor           String
+  telefono               String?
+  fotoPerfil             String?
+  tipoUsuario            TipoUsuario   @default(estudiante)
+  estado                 EstadoUsuario @default(activo)
+  verificado             Boolean       @default(false)
+  tokenVerificacion      String?
+  tokenRecuperacion      String?
+  tokenExpiracion        DateTime?
+  fechaRegistro          DateTime      @default(now())
+  ultimoAcceso           DateTime?
+
+  // Relaciones
+  matriculas              Matricula[]
+  inscripcionesCurso      InscripcionCurso[]
+  profesorCursos          ProfesorCurso[]
+  pagos                   Pago[]
+  certificados            Certificado[]
+  notificaciones          Notificacion[]
+  contenidosSubidos       Contenido[]
+  // ELIMINAR esta línea: resultadosEvaluacion     ResultadoEvaluacion[] @relation("EstudianteEvaluacion")
+  evaluacionesCalificadas ResultadoEvaluacion[] @relation("ProfesorCalificacion")
+  pagosValidados          Pago[]                @relation("ValidadorPago")
+
+  @@index([email])
+  @@index([dni])
+}
+
+enum EstadoPago {
+  pendiente
+  pagado
+  cancelado
+}
+
+enum MetodoPago {
+  // Pagos manuales (sin comisión)
+  yape
+  transferencia_bancaria
+
+  // Pagos con gateway (con comisión)
+  mercado_pago
+  stripe
+  paypal
+}
+
+model Matricula {
+  id                    Int         @id @default(autoincrement())
+  codigoMatricula       String      @unique
+  usuarioId             Int
+  fechaMatricula        DateTime    @default(now())
+  montoMatricula        Decimal     @default(50.00) @db.Decimal(10, 2)
+  estadoPago            EstadoPago  @default(pendiente)
+  metodoPago            MetodoPago?
+  referenciaPago        String?
+  fechaPago             DateTime?
+  respuestasAdicionales Json?
+  activa                Boolean     @default(true)
+
+  // Relaciones
+  usuario            Usuario            @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  inscripcionesCurso InscripcionCurso[]
+  certificados       Certificado[]
+
+  @@index([usuarioId])
+  @@index([codigoMatricula])
+}
+
+model Curso {
+  id                Int      @id @default(autoincrement())
+  codigoCurso       String   @unique
+  nombre            String
+  descripcion       String?  @db.Text
+  objetivos         String?  @db.Text
+  numeroOrden       Int
+  precio            Decimal  @default(80.00) @db.Decimal(10, 2)
+  esCurricular      Boolean  @default(true)
+  totalUnidades     Int      @default(4)
+  totalEvaluaciones Int      @default(4)
+  tieneExamenFinal  Boolean  @default(true)
+  silaboUrl         String?
+  imagenPortada     String?
+  activo            Boolean  @default(true)
+  fechaCreacion     DateTime @default(now())
+
+  // Relaciones
+  unidades      Unidad[]
+  profesores    ProfesorCurso[]
+  inscripciones InscripcionCurso[]
+  evaluaciones  Evaluacion[]
+  clasesZoom    ClaseZoom[]
+
+  @@unique([numeroOrden, esCurricular])
+}
+
+model ProfesorCurso {
+  id              Int      @id @default(autoincrement())
+  cursoId         Int
+  profesorId      Int
+  esPrincipal     Boolean  @default(true)
+  fechaAsignacion DateTime @default(now())
+
+  // Relaciones
+  curso    Curso   @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  profesor Usuario @relation(fields: [profesorId], references: [id], onDelete: Cascade)
+
+  @@unique([cursoId, profesorId])
+}
+
+model Unidad {
+  id           Int     @id @default(autoincrement())
+  cursoId      Int
+  numeroUnidad Int
+  titulo       String
+  descripcion  String? @db.Text
+  objetivos    String? @db.Text
+  orden        Int
+  activa       Boolean @default(true)
+
+  // Relaciones
+  curso        Curso        @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  contenidos   Contenido[]
+  evaluaciones Evaluacion[]
+  clasesZoom   ClaseZoom[]
+
+  @@unique([cursoId, numeroUnidad])
+}
+
+enum TipoContenido {
+  pdf
+  video_zoom
+  diapositiva
+  otro
+}
+
+model Contenido {
+  id                   Int           @id @default(autoincrement())
+  unidadId             Int
+  titulo               String
+  descripcion          String?       @db.Text
+  tipoContenido        TipoContenido
+  urlArchivo           String // URL para ver el archivo (webViewLink)
+  urlEmbed             String? // URL para embed de videos
+  driveFileId          String? // ID del archivo en Google Drive
+  tamanoMb             Decimal?      @db.Decimal(10, 2)
+  duracionMinutos      Int?
+  orden                Int
+  subidoPorId          Int?
+  esContenidoAdicional Boolean       @default(false)
+  fechaSubida          DateTime      @default(now())
+  activo               Boolean       @default(true)
+
+  // Relaciones
+  unidad    Unidad              @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+  subidoPor Usuario?            @relation(fields: [subidoPorId], references: [id], onDelete: SetNull)
+  progresos ProgresoContenido[]
+
+  @@index([unidadId])
+  @@index([driveFileId])
+}
+
+model ClaseZoom {
+  id              Int      @id @default(autoincrement())
+  cursoId         Int
+  unidadId        Int?
+  titulo          String
+  descripcion     String?  @db.Text
+  fechaHoraInicio DateTime
+  fechaHoraFin    DateTime
+  urlZoom         String
+  meetingId       String?
+  passwordZoom    String?
+  urlGrabacion    String?
+  estado          String   @default("programada")
+  fechaCreacion   DateTime @default(now())
+
+  // Relaciones
+  curso  Curso   @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  unidad Unidad? @relation(fields: [unidadId], references: [id], onDelete: SetNull)
+
+  @@index([fechaHoraInicio])
+}
+
+enum TipoEvaluacion {
+  evaluacion_unidad
+  examen_final
+}
+
+model Evaluacion {
+  id                         Int            @id @default(autoincrement())
+  cursoId                    Int
+  unidadId                   Int?
+  numeroEvaluacion           Int
+  titulo                     String
+  descripcion                String?        @db.Text
+  tipo                       TipoEvaluacion
+  puntuacionMaxima           Decimal        @default(20.00) @db.Decimal(5, 2)
+  puntuacionMinimaAprobacion Decimal        @default(14.00) @db.Decimal(5, 2)
+  duracionMinutos            Int            @default(60)
+  intentosPermitidos         Int            @default(1)
+  fechaDisponible            DateTime?
+  fechaCierre                DateTime?
+  instrucciones              String?        @db.Text
+  activa                     Boolean        @default(true)
+  fechaCreacion              DateTime       @default(now())
+
+  // Relaciones
+  curso      Curso                 @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  unidad     Unidad?               @relation(fields: [unidadId], references: [id], onDelete: SetNull)
+  preguntas  PreguntaEvaluacion[]
+  resultados ResultadoEvaluacion[]
+}
+
+enum TipoPregunta {
+  multiple_choice
+  verdadero_falso
+  desarrollo
+  completar
+}
+
+model PreguntaEvaluacion {
+  id                Int          @id @default(autoincrement())
+  evaluacionId      Int
+  pregunta          String       @db.Text
+  tipoPregunta      TipoPregunta
+  opciones          Json?
+  respuestaCorrecta String?      @db.Text
+  puntos            Decimal      @db.Decimal(5, 2)
+  orden             Int
+  retroalimentacion String?      @db.Text
+
+  // Relaciones
+  evaluacion Evaluacion @relation(fields: [evaluacionId], references: [id], onDelete: Cascade)
+}
+
+enum EstadoCurso {
+  no_iniciado
+  en_progreso
+  completado
+  reprobado
+}
+
+model InscripcionCurso {
+  id                 Int         @id @default(autoincrement())
+  usuarioId          Int
+  matriculaId        Int
+  cursoId            Int
+  fechaInscripcion   DateTime    @default(now())
+  montoCurso         Decimal     @default(80.00) @db.Decimal(10, 2)
+  estadoPago         EstadoPago  @default(pendiente)
+  metodoPago         MetodoPago?
+  referenciaPago     String?
+  fechaPago          DateTime?
+  estadoCurso        EstadoCurso @default(no_iniciado)
+  progresoPorcentaje Int         @default(0)
+  calificacionFinal  Decimal?    @db.Decimal(5, 2)
+  aprobado           Boolean     @default(false)
+  fechaInicio        DateTime?
+  fechaFinalizacion  DateTime?
+
+  // Relaciones
+  usuario              Usuario               @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  matricula            Matricula             @relation(fields: [matriculaId], references: [id], onDelete: Cascade)
+  curso                Curso                 @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  progresosContenido   ProgresoContenido[]
+  resultadosEvaluacion ResultadoEvaluacion[]
+
+  @@unique([usuarioId, cursoId])
+  @@index([estadoCurso])
+}
+
+model ProgresoContenido {
+  id                    Int       @id @default(autoincrement())
+  inscripcionCursoId    Int
+  contenidoId           Int
+  completado            Boolean   @default(false)
+  porcentajeVisto       Int       @default(0)
+  tiempoDedicadoMinutos Int       @default(0)
+  fechaInicio           DateTime?
+  fechaCompletado       DateTime?
+  ultimaActualizacion   DateTime  @default(now()) @updatedAt
+
+  // Relaciones
+  inscripcionCurso InscripcionCurso @relation(fields: [inscripcionCursoId], references: [id], onDelete: Cascade)
+  contenido        Contenido        @relation(fields: [contenidoId], references: [id], onDelete: Cascade)
+
+  @@unique([inscripcionCursoId, contenidoId])
+}
+
+model ResultadoEvaluacion {
+  id                        Int       @id @default(autoincrement())
+  inscripcionCursoId        Int
+  evaluacionId              Int
+  intentoNumero             Int       @default(1)
+  puntuacionObtenida        Decimal?  @db.Decimal(5, 2)
+  porcentaje                Decimal?  @db.Decimal(5, 2)
+  aprobado                  Boolean?
+  respuestas                Json?
+  fechaInicio               DateTime  @default(now())
+  fechaFinalizacion         DateTime?
+  tiempoEmpleadoMinutos     Int?
+  calificado                Boolean   @default(false)
+  calificadoPorId           Int?
+  fechaCalificacion         DateTime?
+  retroalimentacionProfesor String?   @db.Text
+
+  // Relaciones
+  inscripcionCurso InscripcionCurso @relation(fields: [inscripcionCursoId], references: [id], onDelete: Cascade)
+  evaluacion       Evaluacion       @relation(fields: [evaluacionId], references: [id], onDelete: Cascade)
+  calificadoPor    Usuario?         @relation("ProfesorCalificacion", fields: [calificadoPorId], references: [id], onDelete: SetNull)
+  // REMOVIDO: estudiante - accede al estudiante mediante inscripcionCurso.usuario
+}
+
+model Certificado {
+  id                     Int      @id @default(autoincrement())
+  codigoCertificado      String   @unique
+  usuarioId              Int
+  matriculaId            Int
+  fechaEmision           DateTime
+  totalCursosCompletados Int      @default(12)
+  promedioGeneral        Decimal? @db.Decimal(5, 2)
+  totalHorasCertificadas Int?
+  urlCertificado         String?
+  hashVerificacion       String?  @unique
+  verificado             Boolean  @default(true)
+  activo                 Boolean  @default(true)
+  fechaCreacion          DateTime @default(now())
+
+  // Relaciones
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Cascade)
+}
+
+enum TipoPago {
+  matricula
+  curso
+  curso_adicional
+}
+
+enum EstadoPagoTransaccion {
+  pendiente // Pago iniciado pero no completado
+  pendiente_validacion // Pago manual esperando validación del admin
+  procesando // Gateway procesando
+  completado // Pago confirmado
+  fallido // Pago rechazado
+  reembolsado // Pago devuelto
+}
+
+model Pago {
+  id                Int      @id @default(autoincrement())
+  usuarioId         Int
+  tipoPago          TipoPago
+  idReferencia      Int // ID de Matricula o InscripcionCurso
+  codigoTransaccion String   @unique
+
+  // Montos
+  monto      Decimal @db.Decimal(10, 2)
+  comision   Decimal @default(0) @db.Decimal(10, 2)
+  montoTotal Decimal @db.Decimal(10, 2) // monto + comision
+
+  // Método y estado
+  metodoPago MetodoPago
+  estado     EstadoPagoTransaccion @default(pendiente)
+
+  // Para pagos manuales
+  comprobanteUrl  String? // URL del comprobante subido
+  numeroOperacion String? // Número de operación bancaria/Yape
+  fechaOperacion  DateTime? // Fecha que indica el comprobante
+
+  // Para gateways de pago
+  paymentIntentId   String? // ID de Stripe/PayPal/MercadoPago
+  checkoutSessionId String? // Session ID para verificación
+  referenciaExterna String? // Referencia del gateway
+  webhookData       Json? // Data del webhook recibido
+
+  // Validación por admin (solo para pagos manuales)
+  validadoPorId   Int?
+  fechaValidacion DateTime?
+  razonRechazo    String?   @db.Text
+
+  // Detalles adicionales
+  detallesPago Json? // Info extra del pago
+  ipAddress    String?
+  userAgent    String?
+
+  // Timestamps
+  fechaPago       DateTime  @default(now())
+  fechaExpiracion DateTime? // Para pagos pendientes
+
+  // Relaciones
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  validadoPor Usuario? @relation("ValidadorPago", fields: [validadoPorId], references: [id], onDelete: SetNull)
+
+  @@index([usuarioId])
+  @@index([estado])
+  @@index([metodoPago])
+  @@index([fechaPago])
+}
+
+model ConfiguracionPago {
+  id         Int        @id @default(autoincrement())
+  metodoPago MetodoPago @unique
+  activo     Boolean    @default(true)
+
+  // Para pagos manuales
+  nombreTitular String?
+  numeroCuenta  String?
+  nombreBanco   String?
+  tipoCuenta    String? // Ahorros, Corriente
+  numeroCelular String? // Para Yape
+
+  // Para gateways
+  publicKey          String?
+  secretKey          String? // Encriptado
+  webhookSecret      String? // Encriptado
+  comisionPorcentaje Decimal? @db.Decimal(5, 2)
+  comisionFija       Decimal? @db.Decimal(10, 2)
+
+  // Configuración adicional
+  config        Json? // Configuraciones específicas del gateway
+  instrucciones String? @db.Text
+
+  fechaActualizacion DateTime @default(now()) @updatedAt
+}
+
+enum TipoNotificacion {
+  pago
+  curso
+  evaluacion
+  clase_zoom
+  sistema
+}
+
+model Notificacion {
+  id            Int              @id @default(autoincrement())
+  usuarioId     Int
+  tipo          TipoNotificacion
+  titulo        String
+  mensaje       String?          @db.Text
+  urlAccion     String?
+  leida         Boolean          @default(false)
+  fechaCreacion DateTime         @default(now())
+  fechaLectura  DateTime?
+
+  // Relaciones
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, leida])
+}
+
+model Configuracion {
+  id                 Int      @id @default(autoincrement())
+  clave              String   @unique
+  valor              String?  @db.Text
+  descripcion        String?  @db.Text
+  fechaActualizacion DateTime @default(now()) @updatedAt
+}
