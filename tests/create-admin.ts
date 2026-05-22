@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config(); // Cargar .env desde la raíz
 
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
