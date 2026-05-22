@@ -7,5 +7,8 @@
     "moduleResolution": "node",
     "skipLibCheck": true,
     "ignoreDeprecations": "6.0"
+  }"compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
   }
 }
