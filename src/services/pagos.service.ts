@@ -1,8 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+//import { PrismaClient } from '@prisma/client';
+import { prisma} from '../lib/prisma';
 import Stripe from 'stripe';
 import axios from 'axios';
 
-const prisma = new PrismaClient();
+////const prisma = new PrismaClient();
 
 class PagosService {
   private stripe: Stripe | null = null;

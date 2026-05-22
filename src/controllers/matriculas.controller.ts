@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+//import { PrismaClient } from '@prisma/client';
+import { prisma} from '../lib/prisma';
 import { sendSuccess, sendError, sendCreated } from '../utils/response.utils';import { any } from 'zod';
 
-const prisma = new PrismaClient();
+//const prisma = new PrismaClient();
 
 export const crearMatricula = async (req: Request, res: Response) => {
   try {

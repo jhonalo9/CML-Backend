@@ -1,5 +1,6 @@
 import { MetodoPago, TipoPago, EstadoPagoTransaccion } from '@prisma/client';
 
+
 /**
  * Tipos de pago seguros
  */

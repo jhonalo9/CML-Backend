@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
-import { PrismaClient, TipoUsuario, EstadoUsuario, EstadoPagoTransaccion, TipoPago } from '@prisma/client';
+import { prisma} from '../lib/prisma';
+import { TipoUsuario, EstadoUsuario, EstadoPagoTransaccion, TipoPago } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+//const prisma = new PrismaClient();
 
 // Tipos para filtros
 interface WhereUsuario {

@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma} from '../lib/prisma';
 import driveStorage from '../config/googleDriveConfig';
 import { sendSuccess, sendError, sendCreated } from '../utils/response.utils';
 import { crearContenidoSchema } from '../validators/curso.validator';
 
-const prisma = new PrismaClient();
+//const prisma = new PrismaClient();
 
 /**
  * Subir contenido a un curso

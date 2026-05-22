@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma} from '../lib/prisma';
 import { sendSuccess, sendError, sendCreated, sendPaginated } from '../utils/response.utils';
 import { crearCursoSchema, actualizarCursoSchema, crearUnidadSchema, crearClaseZoomSchema } from '../validators/curso.validator';
 import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
 //import { cleanupTempFile } from '../config/multer';
 
-const prisma = new PrismaClient();
+//const prisma = new PrismaClient();
 
 /**
  * Crear curso (Solo Admin)

@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma} from '../lib/prisma';
 import { sendSuccess, sendError, sendCreated } from '../utils/response.utils';
 import { crearEvaluacionSchema, crearPreguntaSchema } from '../validators/curso.validator';
 
-const prisma = new PrismaClient();
+//const prisma = new PrismaClient();
 
 /**
  * Crear evaluación (Admin/Profesor)

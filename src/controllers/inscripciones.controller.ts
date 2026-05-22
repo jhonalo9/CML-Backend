@@ -1,9 +1,9 @@
 // src/controllers/inscripciones.controller.ts
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma} from '../lib/prisma';
 import { sendSuccess, sendError, sendCreated } from '../utils/response.utils';
 
-const prisma = new PrismaClient();
+//const prisma = new PrismaClient();
 
 /**
  * Inscribirse a un curso

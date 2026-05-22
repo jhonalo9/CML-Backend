@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma} from '../lib/prisma';
+
 import { sendSuccess, sendError, sendCreated } from '../utils/response.utils';
 import pagosService from '../services/pagos.service';
 import { 
@@ -10,7 +11,7 @@ import {
 import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
 //import { cleanupTempFile } from '../config/multer';
 
-const prisma = new PrismaClient();
+//const prisma = new PrismaClient();
 
 /**
  * Obtener métodos de pago disponibles
