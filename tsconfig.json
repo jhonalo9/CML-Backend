@@ -6,9 +6,7 @@
     "strict": true,
     "moduleResolution": "node",
     "skipLibCheck": true,
-    "ignoreDeprecations": "6.0"
-  },
-  "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "outDir": "./dist",
     "rootDir": "./src"
   }
